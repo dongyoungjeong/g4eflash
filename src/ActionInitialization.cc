@@ -1,23 +1,30 @@
 #include "ActionInitialization.hh"
 #include "PrimaryGeneratorAction.hh"
+#include "RunAction.hh"
+#include "EventAction.hh"
+#include "SteppingAction.hh"
 
-//#include "EventAction.hh"
-//#include "RunAction.hh"
-//#include "SteppingAction.hh"
+
+ActionInitialization::ActionInitialization() : G4VUserActionInitialization() {}
+
+
+ActionInitialization::~ActionInitialization() {}
+
 
 void ActionInitialization::BuildForMaster() const {
-//  auto runAction = new RunAction;
-//  SetUserAction(runAction);
+    RunAction *runAction = new RunAction;
+    SetUserAction(runAction);
 }
+
 
 void ActionInitialization::Build() const {
     SetUserAction(new PrimaryGeneratorAction);
 
-//  auto runAction = new RunAction;
-//  SetUserAction(runAction);
-//
-//  auto eventAction = new EventAction(runAction);
-//  SetUserAction(eventAction);
-//
-//  SetUserAction(new SteppingAction(eventAction));
+    RunAction *runAction = new RunAction;
+    SetUserAction(runAction);
+
+    EventAction *eventAction = new EventAction();
+    SetUserAction(eventAction);
+
+    SetUserAction(new SteppingAction(eventAction));
 }

@@ -1,11 +1,15 @@
 #ifndef PrimaryGeneratorAction_h
 #define PrimaryGeneratorAction_h
 
+#include "globals.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
-class G4ParticleGun;
+
 class G4Event;
-class G4Box;
+class G4GeneralParticleSource;
+class G4SPSPosDistribution;
+class G4SPSAngDistribution;
+class G4SPSEneDistribution;
 
 class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
 public:
@@ -13,11 +17,14 @@ public:
     ~PrimaryGeneratorAction() override;
 
     void GeneratePrimaries(G4Event*) override; // method from the base class
-    const G4ParticleGun* GetParticleGun() const { return fParticleGun; } // method to access particle gun
 
 private:
-    G4ParticleGun* fParticleGun = nullptr;  // pointer a to G4 gun class
-    G4Box* fEnvelopeBox = nullptr;
+    void SetDefaultPrimaryParticle();
+
+    G4GeneralParticleSource* particleSource;
+    G4SPSPosDistribution *posDist;
+    G4SPSAngDistribution *angDist;
+    G4SPSEneDistribution *eneDist;
 };
 
 #endif

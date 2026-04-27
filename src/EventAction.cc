@@ -1,12 +1,23 @@
 #include "EventAction.hh"
-#include "RunAction.hh"
 
-EventAction::EventAction(RunAction* runAction) : fRunAction(runAction) {}
+#include "G4Event.hh"
 
-void EventAction::BeginOfEventAction(const G4Event*) {
-    fEdep = 0.;
+
+EventAction::EventAction() : G4UserEventAction(), printModulo(100000) {}
+
+
+EventAction::~EventAction() {}
+
+
+void EventAction::BeginOfEventAction(const G4Event* event) {
+    G4int eventID = event->GetEventID();
+    if(eventID % printModulo == 0) // this prints every 100000 events
+        G4cout << "\n---> Begin of event: " << eventID << G4endl;
 }
 
-void EventAction::EndOfEventAction(const G4Event*) {
-    fRunAction->AddEdep(fEdep);
+
+void EventAction::EndOfEventAction(const G4Event* event) {
+    G4int eventID = event->GetEventID();
+    if (eventID % printModulo == 0) // this prints every 100000 events
+        G4cout << "---> End of event: " << eventID << G4endl;
 }

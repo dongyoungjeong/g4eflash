@@ -1,24 +1,26 @@
+/control/verbose 1
+/tracking/verbose 0
+/run/verbose 1
+/event/verbose 0
 
-# Change the default number of workers (in multi-threading mode) 
-#/run/numberOfThreads 4
+#/changeDetector/activateArray false
 
 /run/initialize
 
-/control/verbose 1
-/run/verbose 1
-/event/verbose 0
-/tracking/verbose 1
+# Set a very high time threshold to allow all decays to happen
+#/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
 
-#/gps/particle gamma
-#/gps/energy 10 MeV
-#/gps/pos/type Point
-#/gps/pos/centre 0 0 2.5 m
-#/gps/ang/type direction
-#/gps/ang/direction 0 0 -1
-/run/beamOn 50
+##Custom Histogram (ElectronFlash)########################
+#/control/execute 9MeVEF.mac
+#/control/execute 7MeVEF.mac
+#########################
 
-# proton 210 MeV to the direction (0.,0.,1.)
-#/gun/particle proton
-#/gun/energy 210 MeV
-#/tracking/verbose 2
-#/run/beamOn 1
+#/score/create/boxMesh boxMesh_1
+#/score/mesh/translate/xyz 0 0 130 mm
+#/score/mesh/boxSize 127.5 127.5 127.5 mm  # half dim
+#/score/mesh/nBin 51 51 51
+#/score/quantity/doseDeposit dDep
+#/score/close
+#/score/list
+
+/run/beamOn	1000000

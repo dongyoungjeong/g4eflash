@@ -3,20 +3,17 @@
 
 #include "G4UserSteppingAction.hh"
 
-class G4LogicalVolume;
-class G4Step;
 
 class EventAction;
 
 class SteppingAction : public G4UserSteppingAction {
 public:
-    SteppingAction(EventAction* eventAction);
-    ~SteppingAction() override = default;
+    SteppingAction(EventAction*);
+    ~SteppingAction();
 
-    void UserSteppingAction(const G4Step *) override;
+    void UserSteppingAction(const G4Step*) override;
 
 private:
-    EventAction* fEventAction = nullptr;
-    G4LogicalVolume* fScoringVolume = nullptr;
+    EventAction* eventAction = nullptr;
 };
 #endif
