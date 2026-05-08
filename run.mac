@@ -1,11 +1,17 @@
 /control/verbose 1
-/tracking/verbose 0
 /run/verbose 1
 /event/verbose 0
+/tracking/verbose 0
+/hits/verbose 0
+/process/verbose 0
+/gps/verbose 0
+
+/run/beamOn	1000000
+
+
+
 
 #/changeDetector/activateArray false
-
-/run/initialize
 
 # Set a very high time threshold to allow all decays to happen
 #/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
@@ -22,5 +28,3 @@
 #/score/quantity/doseDeposit dDep
 #/score/close
 #/score/list
-
-/run/beamOn	1000000

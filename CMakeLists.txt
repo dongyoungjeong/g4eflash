@@ -20,9 +20,6 @@ target_include_directories(eflash PRIVATE include)
 target_link_libraries(eflash PRIVATE ${Geant4_LIBRARIES})
 
 set(EFLASH_SCRIPTS
-#    eflash.in
-#    eflash.out
-    init_vis.mac
     run.mac
     vis.mac
     )

@@ -31,22 +31,22 @@ void PrimaryGeneratorAction::SetDefaultPrimaryParticle(){
 
     posDist->SetPosDisType("Beam");
     posDist->SetPosDisShape("Circle");
-    posDist->SetCentreCoords(G4ThreeVector(0., 0., -m));
+    posDist->SetCentreCoords(G4ThreeVector(0., 0., m));
     posDist->SetPosRot1(G4ThreeVector(1., 0., 0.)); // default value, but set it anyway
     posDist->SetPosRot2(G4ThreeVector(0., 1., 0.)); // default value, but set it anyway
-    posDist->SetBeamSigmaInX(mm);
-    posDist->SetBeamSigmaInY(mm);
-    posDist->SetRadius(mm);                         // Hard cutoff radius
+    // posDist->SetBeamSigmaInX(mm);
+    // posDist->SetBeamSigmaInY(mm);
+    // posDist->SetRadius(mm);                         // Hard cutoff radius
 
     angDist->SetAngDistType("beam2d");
     angDist->DefineAngRefAxes("angref1", G4ThreeVector(1., 0., 0.)); // default value, but set it anyway
     angDist->DefineAngRefAxes("angref2", G4ThreeVector(0., 1., 0.)); // default value, but set it anyway
-    angDist->SetBeamSigmaInAngX(deg);                                // set planar divergence
-    angDist->SetBeamSigmaInAngY(deg);                                // set planar divergence
+    // angDist->SetBeamSigmaInAngX(deg);                                // set planar divergence
+    // angDist->SetBeamSigmaInAngY(deg);                                // set planar divergence
 
-    eneDist->SetEnergyDisType("Gauss");
+    // eneDist->SetEnergyDisType("Gauss");
     eneDist->SetMonoEnergy(6. * MeV);
-    eneDist->SetBeamSigmaInE(.2 * MeV);
+    // eneDist->SetBeamSigmaInE(.2 * MeV);
 }
 
 

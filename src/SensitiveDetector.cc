@@ -17,35 +17,38 @@ SensitiveDetector::~SensitiveDetector(){}
 
 G4bool SensitiveDetector::ProcessHits(G4Step *step, G4TouchableHistory *){
     // For phase space: record particles entering the volume
-    G4StepPoint *preStep = step->GetPreStepPoint();
-    if (preStep->GetStepStatus() != fGeomBoundary)
+    G4StepPoint *preStepPoint = step->GetPreStepPoint();
+    if (preStepPoint->GetStepStatus() != fGeomBoundary)
         return false;
-    // --- Only record forward-going particles (travelling along +Z) ---
-    if (preStep->GetMomentumDirection().z() <= 0.)
+    // --- Only record forward-going particles (travelling toward -z) ---
+    if (preStepPoint->GetMomentumDirection().z() >= 0.)
         return false;
 
     G4Track *track = step->GetTrack();
     G4int pdg = track->GetDynamicParticle()->GetPDGcode();
     
-    G4ThreeVector pos = preStep->GetPosition();
-    G4ThreeVector dir = preStep->GetMomentumDirection();
-    // G4ThreeVector mom = preStep->GetMomentum();
-    G4double kE = preStep->GetKineticEnergy();
+    G4ThreeVector position = preStepPoint->GetPosition();
+    G4ThreeVector momentumDirection = preStepPoint->GetMomentumDirection();
+    // G4ThreeVector momentum = preStepPoint->GetMomentum();
+    G4double kineticEnergy = preStepPoint->GetKineticEnergy();
 
     G4double weight = track->GetWeight();
     G4int eventID = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     G4int parentID = track->GetParentID();
     G4int trackID = track->GetTrackID();
-    G4int isNew = (trackID == 1) ? 1 : 0;
+    G4int isNew = -1; //(trackID == 1) ? 1 : 0; // should be checked later for the correctness
+
+    // G4cout<< "position"<< position<<", direction"<< momentumDirection<<", kE("<< kineticEnergy<< ")" <<G4endl;
+    // track->SetTrackStatus(fStopAndKill); // kill the particle after recording its phase space data
 
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
-    analysisManager->FillNtupleDColumn(0, 0, pos.x() / mm);
-    analysisManager->FillNtupleDColumn(0, 1, pos.y() / mm);
-    analysisManager->FillNtupleDColumn(0, 2, pos.z() / mm);
-    analysisManager->FillNtupleDColumn(0, 3, dir.x());
-    analysisManager->FillNtupleDColumn(0, 4, dir.y());
-    analysisManager->FillNtupleDColumn(0, 5, dir.z());
-    analysisManager->FillNtupleDColumn(0, 6, kE / MeV);
+    analysisManager->FillNtupleDColumn(0, 0, position.x() / mm);
+    analysisManager->FillNtupleDColumn(0, 1, position.y() / mm);
+    analysisManager->FillNtupleDColumn(0, 2, position.z() / mm);
+    analysisManager->FillNtupleDColumn(0, 3, momentumDirection.x());
+    analysisManager->FillNtupleDColumn(0, 4, momentumDirection.y());
+    analysisManager->FillNtupleDColumn(0, 5, momentumDirection.z());
+    analysisManager->FillNtupleDColumn(0, 6, kineticEnergy / MeV);
     analysisManager->FillNtupleDColumn(0, 7, weight);
     analysisManager->FillNtupleIColumn(0, 8, pdg);
     analysisManager->FillNtupleIColumn(0, 9, isNew);

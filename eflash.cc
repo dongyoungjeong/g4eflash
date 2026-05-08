@@ -1,6 +1,6 @@
 #include "DetectorConstruction.hh"
 #include "ActionInitialization.hh"
-#include "QBBC.hh"
+#include "QGSP_BIC_HP.hh"
 
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
@@ -10,29 +10,26 @@
 #include "G4ScoringManager.hh"
 
 int main(int argc, char** argv){
-    // G4int precision = 4;
-    // G4int nThreads = 1;
+    G4int nThreads = 9;
+    G4Random::setTheSeed(1); // 1 ≤ seed ≤ 900,000,000
 
     auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
-    // G4SteppingVerbose::UseBestUnit(precision);
-    // runManager->SetNumberOfThreads(nThreads);
-
-    auto physicsList = new QBBC;
-    physicsList->SetVerboseLevel(1);
-
+    runManager->SetNumberOfThreads(nThreads);
     runManager->SetUserInitialization(new DetectorConstruction());
-    runManager->SetUserInitialization(physicsList);
+    runManager->SetUserInitialization(new QGSP_BIC_HP());
     runManager->SetUserInitialization(new ActionInitialization());
-    
+    runManager->Initialize(); // declared here instead of .mac files
+    // runManager->BeamOn(1000000); // normally declared in run.mac
+
     auto visManager = new G4VisExecutive(argc, argv);
     visManager->Initialize();
 
-    G4UIExecutive *ui = nullptr;
+    // G4ScoringManager::GetScoringManager();
+
     auto UImanager = G4UImanager::GetUIpointer();
-    G4ScoringManager::GetScoringManager();
     if (argc == 1){ // interactive mode
-        ui = new G4UIExecutive(argc, argv);
-        UImanager->ApplyCommand("/control/execute init_vis.mac");
+        G4UIExecutive *ui = new G4UIExecutive(argc, argv);
+        UImanager->ApplyCommand("/control/execute vis.mac");
         ui->SessionStart();
         delete ui;
     }

@@ -25,7 +25,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4bool checkOverlaps = true;
 
     // World
-    G4double world_XYZ = m; // half length in x, y, z direction
+    G4double world_XYZ = m;
     auto solidWorld = new G4Box("World", world_XYZ, world_XYZ, world_XYZ);
     auto logicWorld = new G4LogicalVolume(solidWorld, air, "World");
     auto physWorld = new G4PVPlacement(nullptr, G4ThreeVector(), logicWorld, "World", nullptr, false, 0, checkOverlaps);
@@ -36,8 +36,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4Material* SF1_material = Ta;
     G4double SF1_RMax = 12.7 * mm;
     G4double SF1_Dz = 10. * um; // half length
-    G4double SF1_distance_from_source = 5.*cm;
-    G4ThreeVector SF1_tlate(0., 0., -world_XYZ + SF1_distance_from_source + SF1_Dz);
+    G4double SF1_distance_from_source = cm;
+    G4ThreeVector SF1_tlate(0., 0., world_XYZ - SF1_distance_from_source - SF1_Dz);
     auto solidSF1 = new G4Tubs("Primary Scattering Foil", 0., SF1_RMax, SF1_Dz, 0., twopi);
     auto logicSF1 = new G4LogicalVolume(solidSF1, SF1_material, "Primary Scattering Foil");
     new G4PVPlacement(nullptr, SF1_tlate, logicSF1, "Primary Scattering Foil", logicWorld, false, 0, checkOverlaps);
@@ -48,8 +48,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4Material* SF2L_material = Ta;
     G4double SF2L_RMax = 12.7 * mm;
     G4double SF2L_Dz = 25. * um; // half length
-    G4double SF2_distance_from_source = 10. * cm;
-    G4ThreeVector SF2L_tlate(0., 0., -world_XYZ + SF2_distance_from_source + SF2L_Dz);
+    G4double SF2_distance_from_source = SF1_distance_from_source + 5.*cm;
+    G4ThreeVector SF2L_tlate(0., 0., world_XYZ - SF2_distance_from_source - SF2L_Dz);
     auto solidSF2L = new G4Tubs("Secondary Scattering Foil Large", 0., SF2L_RMax, SF2L_Dz, 0., twopi);
     auto logicSF2L = new G4LogicalVolume(solidSF2L, SF2L_material, "Secondary Scattering Foil Large");
     new G4PVPlacement(nullptr, SF2L_tlate, logicSF2L, "Secondary Scattering Foil Large", logicWorld, false, 0, checkOverlaps);
@@ -60,7 +60,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4Material* SF2S_material = Ta;
     G4double SF2S_RMax = 6.35 * mm;
     G4double SF2S_Dz = 125. * um; // half length
-    G4ThreeVector SF2S_tlate(0., 0., -world_XYZ + SF2_distance_from_source + 2.*SF2L_Dz + SF2S_Dz);
+    G4ThreeVector SF2S_tlate(0., 0., world_XYZ - SF2_distance_from_source - 2.*SF2L_Dz - SF2S_Dz);
     auto solidSF2S = new G4Tubs("Secondary Scattering Foil Small", 0., SF2S_RMax, SF2S_Dz, 0., twopi);
     auto logicSF2S = new G4LogicalVolume(solidSF2S, SF2S_material, "Secondary Scattering Foil Small");
     new G4PVPlacement(nullptr, SF2S_tlate, logicSF2S, "Secondary Scattering Foil Small", logicWorld, false, 0, checkOverlaps);
@@ -71,13 +71,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Scoring Plane
     G4Material *SP_material = air;
     G4double SP_RMax = 12.7 * mm;
-    G4double SP_Dz = 10. * um; // half length
-    G4double SP_distance_from_source = 11. * cm;
-    G4ThreeVector SP_tlate(0., 0., -world_XYZ + SP_distance_from_source + SP_Dz);
+    G4double SP_Dz = mm; // half length
+    G4double SP_distance_from_source = SF2_distance_from_source + cm;
+    G4ThreeVector SP_tlate(0., 0., world_XYZ - SP_distance_from_source - SP_Dz);
     auto solidSP = new G4Tubs("Scoring Plane", 0., SP_RMax, SP_Dz, 0., twopi);
     auto logicSP = new G4LogicalVolume(solidSP, SP_material, "Scoring Plane");
     new G4PVPlacement(nullptr, SP_tlate, logicSP, "Scoring Plane", logicWorld, false, 0, checkOverlaps);
-    G4VisAttributes SPVisAtt(G4Colour::Yellow());
+    G4VisAttributes SPVisAtt(G4Colour(1., 1., 1., .5));
     SPVisAtt.SetForceSolid();
     logicSP->SetVisAttributes(SPVisAtt);
     scoringVolume = logicSP; // set the scoring volume for later use in SensitiveDetector
@@ -247,7 +247,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
 void DetectorConstruction::ConstructSDandField() {
     G4SDManager *sdManager = G4SDManager::GetSDMpointer();
-    SensitiveDetector *sd = new SensitiveDetector("phasespace");
+    SensitiveDetector *sd = new SensitiveDetector("Sensitive Detector");
     sdManager->AddNewDetector(sd);
     scoringVolume->SetSensitiveDetector(sd);
 }
