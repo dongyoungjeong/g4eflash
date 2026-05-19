@@ -23,7 +23,7 @@ protected:
 private:
     void DefineMaterials();
 
-    G4Material *Al, *Cu, *Ta, *W, *Au;
+    G4Material *Al, *Ti, *Cu, *Ta, *W, *Au;
     G4Material *air, *mylar, *kapton, *tungstenAlloy;
 };
 

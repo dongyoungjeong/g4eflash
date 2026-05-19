@@ -48,3 +48,6 @@ build/*
 
 # vscode files
 .vscode/*
+
+# README
+README.md

@@ -32,6 +32,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // no rotation, at (0,0,0), its logical volume, its name, its mother  volume, no boolean operation, copy number, overlaps checking
     logicWorld->SetVisAttributes(G4VisAttributes::GetInvisible());
 
+    // Vacuum exit window
+    G4Material *VEW_material = Ti;
+    G4double VEW_RMax = 10. * mm;
+    G4double VEW_Dz = 25. * um; // half length
+    G4double VEW_distance_from_source = mm;
+    G4ThreeVector VEW_tlate(0., 0., world_XYZ - VEW_distance_from_source - VEW_Dz);
+    auto solidVEW = new G4Tubs("Vacuum Exit Window", 0., VEW_RMax, VEW_Dz, 0., twopi);
+    auto logicVEW = new G4LogicalVolume(solidVEW, VEW_material, "Vacuum Exit Window");
+    new G4PVPlacement(nullptr, VEW_tlate, logicVEW, "Vacuum Exit Window", logicWorld, false, 0, checkOverlaps);
+    G4VisAttributes VEWVisAtt(G4Colour::White());
+    VEWVisAtt.SetForceSolid();
+    logicVEW->SetVisAttributes(VEWVisAtt);
+
     // Scattering Foils
     G4Material* SF1_material = Ta;
     G4double SF1_RMax = 12.7 * mm;
@@ -48,7 +61,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4Material* SF2L_material = Ta;
     G4double SF2L_RMax = 12.7 * mm;
     G4double SF2L_Dz = 25. * um; // half length
-    G4double SF2_distance_from_source = SF1_distance_from_source + 5.*cm;
+    G4double SF2_distance_from_source = SF1_distance_from_source + 9.*cm;
     G4ThreeVector SF2L_tlate(0., 0., world_XYZ - SF2_distance_from_source - SF2L_Dz);
     auto solidSF2L = new G4Tubs("Secondary Scattering Foil Large", 0., SF2L_RMax, SF2L_Dz, 0., twopi);
     auto logicSF2L = new G4LogicalVolume(solidSF2L, SF2L_material, "Secondary Scattering Foil Large");
@@ -68,11 +81,36 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     SF2SVisAtt.SetForceSolid();
     logicSF2S->SetVisAttributes(SF2SVisAtt);
 
+    // Light-field Mirror
+    G4Material *mirror1_material = mylar;
+    G4double mirror_RMax = 12.7 * mm;
+    G4double mirror1_Dz = 60. * um; // half length
+    G4double mirror_distance_from_source = SF2_distance_from_source + 10. * cm;
+    G4ThreeVector mirror1_tlate(0., 0., world_XYZ - mirror_distance_from_source - mirror1_Dz);
+    auto mirrorRot = new G4RotationMatrix();
+    mirrorRot->rotateX(45.*deg);
+    auto solidMirror1 = new G4Tubs("Light Field Mirror Mylar", 0., mirror_RMax, mirror1_Dz, 0., twopi);
+    auto logicMirror1 = new G4LogicalVolume(solidMirror1, mirror1_material, "Light Field Mirror Mylar");
+    new G4PVPlacement(mirrorRot, mirror1_tlate, logicMirror1, "Light Field Mirror Mylar", logicWorld, false, 0, checkOverlaps);
+    G4VisAttributes mirror1VisAtt(G4Colour::White());
+    mirror1VisAtt.SetForceSolid();
+    logicMirror1->SetVisAttributes(mirror1VisAtt);
+
+    G4Material *mirror2_material = Al;
+    G4double mirror2_Dz = 12. * um; // half length
+    G4ThreeVector mirror2_tlate(0., 0., world_XYZ - mirror_distance_from_source - 2.*mirror1_Dz - mirror2_Dz);
+    auto solidMirror2 = new G4Tubs("Light Field Mirror Aluminium", 0., mirror_RMax, mirror2_Dz, 0., twopi);
+    auto logicMirror2 = new G4LogicalVolume(solidMirror2, mirror2_material, "Light Field Mirror Aluminium");
+    new G4PVPlacement(mirrorRot, mirror2_tlate, logicMirror2, "Light Field Mirror Aluminium", logicWorld, false, 0, checkOverlaps);
+    G4VisAttributes mirror2VisAtt(G4Colour::Grey());
+    mirror2VisAtt.SetForceSolid();
+    logicMirror2->SetVisAttributes(mirror2VisAtt);
+
     // Scoring Plane
     G4Material *SP_material = air;
     G4double SP_RMax = 12.7 * mm;
     G4double SP_Dz = mm; // half length
-    G4double SP_distance_from_source = SF2_distance_from_source + cm;
+    G4double SP_distance_from_source = mirror_distance_from_source + cm;
     G4ThreeVector SP_tlate(0., 0., world_XYZ - SP_distance_from_source - SP_Dz);
     auto solidSP = new G4Tubs("Scoring Plane", 0., SP_RMax, SP_Dz, 0., twopi);
     auto logicSP = new G4LogicalVolume(solidSP, SP_material, "Scoring Plane");
@@ -117,19 +155,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // G4VisAttributes ICVisAtt(G4Colour::Yellow());
     // ICVisAtt.SetForceWireframe();
     // logicICRep->SetVisAttributes(ICVisAtt);
-
-    // // Mirror
-    // G4double mirror_XY = 22.098 * cm; // half length in x and y direction
-    // G4double mirror_Z = .0508/2. * cm; // half length in z direction
-    // G4ThreeVector mirror_tlate(0., 0., .5 * m);
-    // auto mirrorRot = new G4RotationMatrix();
-    // mirrorRot->rotateX(36. * deg);
-    // auto solidMirror = new G4Box("Mirror", mirror_XY, mirror_XY, mirror_Z);
-    // auto logicMirror = new G4LogicalVolume(solidMirror, Mylar, "Mirror");
-    // new G4PVPlacement(mirrorRot, mirror_tlate, logicMirror, "Mirror", logicWorld, false, 0, checkOverlaps);
-    // G4VisAttributes mirrorVisAtt(G4Colour::Grey());
-    // mirrorVisAtt.SetForceSolid();
-    // logicMirror->SetVisAttributes(mirrorVisAtt);
 
     // // Jaws
     // G4double jaw_Z = 60.*cm, jaw_Y = 30.*cm, jaw_X = 30.*cm, jaw_LTX = 20.*cm;
@@ -257,6 +282,7 @@ void DetectorConstruction::DefineMaterials(){
     G4NistManager *nist = G4NistManager::Instance();
 
     Al = nist->FindOrBuildMaterial("G4_Al"); // aluminium (13)
+    Ti = nist->FindOrBuildMaterial("G4_Ti"); // titanium (22)
     Cu = nist->FindOrBuildMaterial("G4_Cu"); // copper (29)
     Ta = nist->FindOrBuildMaterial("G4_Ta"); // tantalum (73)
     W = nist->FindOrBuildMaterial("G4_W");   // tungsten (74)
