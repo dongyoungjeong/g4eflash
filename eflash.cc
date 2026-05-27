@@ -10,7 +10,7 @@
 #include "G4ScoringManager.hh"
 
 int main(int argc, char** argv){
-    G4int nThreads = 9;
+    G4int nThreads = lround(ceil(G4float(G4Threading::G4GetNumberOfCores())/2.));
     G4Random::setTheSeed(1); // 1 ≤ seed ≤ 900,000,000
 
     auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);

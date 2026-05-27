@@ -1,5 +1,7 @@
 #include "DetectorConstruction.hh"
 #include "SensitiveDetector.hh"
+#include "PhantomSD.hh"
+#include "Parameters.hh"
 
 #include "G4NistManager.hh"
 #include "G4SystemOfUnits.hh"
@@ -25,100 +27,90 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4bool checkOverlaps = true;
 
     // World
-    G4double world_XYZ = m;
-    auto solidWorld = new G4Box("World", world_XYZ, world_XYZ, world_XYZ);
-    auto logicWorld = new G4LogicalVolume(solidWorld, air, "World");
+    auto solidWorld = new G4Box("World", WORLD_XYZ/2., WORLD_XYZ/2., WORLD_XYZ/2.);
+    auto logicWorld = new G4LogicalVolume(solidWorld, FindMaterial(WORLD_MATERIAL), "World");
     auto physWorld = new G4PVPlacement(nullptr, G4ThreeVector(), logicWorld, "World", nullptr, false, 0, checkOverlaps);
-    // no rotation, at (0,0,0), its logical volume, its name, its mother  volume, no boolean operation, copy number, overlaps checking
     logicWorld->SetVisAttributes(G4VisAttributes::GetInvisible());
 
     // Vacuum exit window
-    G4Material *VEW_material = Ti;
-    G4double VEW_RMax = 10. * mm;
-    G4double VEW_Dz = 25. * um; // half length
-    G4double VEW_distance_from_source = mm;
-    G4ThreeVector VEW_tlate(0., 0., world_XYZ - VEW_distance_from_source - VEW_Dz);
-    auto solidVEW = new G4Tubs("Vacuum Exit Window", 0., VEW_RMax, VEW_Dz, 0., twopi);
-    auto logicVEW = new G4LogicalVolume(solidVEW, VEW_material, "Vacuum Exit Window");
+    G4ThreeVector VEW_tlate(0., 0., WORLD_XYZ/2. - VEW_D - VEW_Z/2.);
+    auto solidVEW = new G4Tubs("Vacuum Exit Window", 0., HEAD_R, VEW_Z/2., 0., twopi);
+    auto logicVEW = new G4LogicalVolume(solidVEW, FindMaterial(VEW_MATERIAL), "Vacuum Exit Window");
     new G4PVPlacement(nullptr, VEW_tlate, logicVEW, "Vacuum Exit Window", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes VEWVisAtt(G4Colour::White());
     VEWVisAtt.SetForceSolid();
     logicVEW->SetVisAttributes(VEWVisAtt);
 
     // Scattering Foils
-    G4Material* SF1_material = Ta;
-    G4double SF1_RMax = 12.7 * mm;
-    G4double SF1_Dz = 10. * um; // half length
-    G4double SF1_distance_from_source = cm;
-    G4ThreeVector SF1_tlate(0., 0., world_XYZ - SF1_distance_from_source - SF1_Dz);
-    auto solidSF1 = new G4Tubs("Primary Scattering Foil", 0., SF1_RMax, SF1_Dz, 0., twopi);
-    auto logicSF1 = new G4LogicalVolume(solidSF1, SF1_material, "Primary Scattering Foil");
+    G4ThreeVector SF1_tlate(0., 0., WORLD_XYZ/2. - SF1_D - SF1_Z/2.);
+    auto solidSF1 = new G4Tubs("Primary Scattering Foil", 0., HEAD_R, SF1_Z/2., 0., twopi);
+    auto logicSF1 = new G4LogicalVolume(solidSF1, FindMaterial(SF1_MATERIAL), "Primary Scattering Foil");
     new G4PVPlacement(nullptr, SF1_tlate, logicSF1, "Primary Scattering Foil", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes SF1VisAtt(G4Colour::Red());
     SF1VisAtt.SetForceSolid();
     logicSF1->SetVisAttributes(SF1VisAtt);
 
-    G4Material* SF2L_material = Ta;
-    G4double SF2L_RMax = 12.7 * mm;
-    G4double SF2L_Dz = 25. * um; // half length
-    G4double SF2_distance_from_source = SF1_distance_from_source + 9.*cm;
-    G4ThreeVector SF2L_tlate(0., 0., world_XYZ - SF2_distance_from_source - SF2L_Dz);
-    auto solidSF2L = new G4Tubs("Secondary Scattering Foil Large", 0., SF2L_RMax, SF2L_Dz, 0., twopi);
-    auto logicSF2L = new G4LogicalVolume(solidSF2L, SF2L_material, "Secondary Scattering Foil Large");
+    G4ThreeVector SF2L_tlate(0., 0., WORLD_XYZ/2. - SF2_D - SF2L_Z/2.);
+    auto solidSF2L = new G4Tubs("Secondary Scattering Foil Large", 0., HEAD_R, SF2L_Z/2., 0., twopi);
+    auto logicSF2L = new G4LogicalVolume(solidSF2L, FindMaterial(SF2L_MATERIAL), "Secondary Scattering Foil Large");
     new G4PVPlacement(nullptr, SF2L_tlate, logicSF2L, "Secondary Scattering Foil Large", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes SF2LVisAtt(G4Colour::Green());
     SF2LVisAtt.SetForceSolid();
     logicSF2L->SetVisAttributes(SF2LVisAtt);
 
-    G4Material* SF2S_material = Ta;
-    G4double SF2S_RMax = 6.35 * mm;
-    G4double SF2S_Dz = 125. * um; // half length
-    G4ThreeVector SF2S_tlate(0., 0., world_XYZ - SF2_distance_from_source - 2.*SF2L_Dz - SF2S_Dz);
-    auto solidSF2S = new G4Tubs("Secondary Scattering Foil Small", 0., SF2S_RMax, SF2S_Dz, 0., twopi);
-    auto logicSF2S = new G4LogicalVolume(solidSF2S, SF2S_material, "Secondary Scattering Foil Small");
+    G4ThreeVector SF2S_tlate(0., 0., WORLD_XYZ/2. - SF2_D - SF2L_Z - SF2S_Z/2.);
+    auto solidSF2S = new G4Tubs("Secondary Scattering Foil Small", 0., HEAD_R/2., SF2S_Z/2., 0., twopi);
+    auto logicSF2S = new G4LogicalVolume(solidSF2S, FindMaterial(SF2S_MATERIAL), "Secondary Scattering Foil Small");
     new G4PVPlacement(nullptr, SF2S_tlate, logicSF2S, "Secondary Scattering Foil Small", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes SF2SVisAtt(G4Colour::Blue());
     SF2SVisAtt.SetForceSolid();
     logicSF2S->SetVisAttributes(SF2SVisAtt);
 
     // Light-field Mirror
-    G4Material *mirror1_material = mylar;
-    G4double mirror_RMax = 12.7 * mm;
-    G4double mirror1_Dz = 60. * um; // half length
-    G4double mirror_distance_from_source = SF2_distance_from_source + 10. * cm;
-    G4ThreeVector mirror1_tlate(0., 0., world_XYZ - mirror_distance_from_source - mirror1_Dz);
+    G4ThreeVector mirror1_tlate(0., 0., WORLD_XYZ/2. - MIRROR_D - MIRROR1_Z/2.);
     auto mirrorRot = new G4RotationMatrix();
     mirrorRot->rotateX(45.*deg);
-    auto solidMirror1 = new G4Tubs("Light Field Mirror Mylar", 0., mirror_RMax, mirror1_Dz, 0., twopi);
-    auto logicMirror1 = new G4LogicalVolume(solidMirror1, mirror1_material, "Light Field Mirror Mylar");
+    auto solidMirror1 = new G4Tubs("Light Field Mirror Mylar", 0., HEAD_R, MIRROR1_Z/2., 0., twopi);
+    auto logicMirror1 = new G4LogicalVolume(solidMirror1, FindMaterial(MIRROR1_MATERIAL), "Light Field Mirror Mylar");
     new G4PVPlacement(mirrorRot, mirror1_tlate, logicMirror1, "Light Field Mirror Mylar", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes mirror1VisAtt(G4Colour::White());
     mirror1VisAtt.SetForceSolid();
     logicMirror1->SetVisAttributes(mirror1VisAtt);
 
-    G4Material *mirror2_material = Al;
-    G4double mirror2_Dz = 12. * um; // half length
-    G4ThreeVector mirror2_tlate(0., 0., world_XYZ - mirror_distance_from_source - 2.*mirror1_Dz - mirror2_Dz);
-    auto solidMirror2 = new G4Tubs("Light Field Mirror Aluminium", 0., mirror_RMax, mirror2_Dz, 0., twopi);
-    auto logicMirror2 = new G4LogicalVolume(solidMirror2, mirror2_material, "Light Field Mirror Aluminium");
+    G4ThreeVector mirror2_tlate(0., 0., WORLD_XYZ/2. - MIRROR_D - MIRROR1_Z - MIRROR2_Z/2.);
+    auto solidMirror2 = new G4Tubs("Light Field Mirror Aluminium", 0., HEAD_R, MIRROR2_Z/2., 0., twopi);
+    auto logicMirror2 = new G4LogicalVolume(solidMirror2, FindMaterial(MIRROR2_MATERIAL), "Light Field Mirror Aluminium");
     new G4PVPlacement(mirrorRot, mirror2_tlate, logicMirror2, "Light Field Mirror Aluminium", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes mirror2VisAtt(G4Colour::Grey());
     mirror2VisAtt.SetForceSolid();
     logicMirror2->SetVisAttributes(mirror2VisAtt);
 
     // Scoring Plane
-    G4Material *SP_material = air;
-    G4double SP_RMax = 12.7 * mm;
-    G4double SP_Dz = mm; // half length
-    G4double SP_distance_from_source = mirror_distance_from_source + cm;
-    G4ThreeVector SP_tlate(0., 0., world_XYZ - SP_distance_from_source - SP_Dz);
-    auto solidSP = new G4Tubs("Scoring Plane", 0., SP_RMax, SP_Dz, 0., twopi);
-    auto logicSP = new G4LogicalVolume(solidSP, SP_material, "Scoring Plane");
+    G4ThreeVector SP_tlate(0., 0., WORLD_XYZ/2. - SP_D - SP_Z/2.);
+    auto solidSP = new G4Tubs("Scoring Plane", 0., HEAD_R, SP_Z/2., 0., twopi);
+    auto logicSP = new G4LogicalVolume(solidSP, FindMaterial(SP_MATERIAL), "Scoring Plane");
     new G4PVPlacement(nullptr, SP_tlate, logicSP, "Scoring Plane", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes SPVisAtt(G4Colour(1., 1., 1., .5));
     SPVisAtt.SetForceSolid();
     logicSP->SetVisAttributes(SPVisAtt);
     scoringVolume = logicSP; // set the scoring volume for later use in SensitiveDetector
+
+    // water phantom
+    G4ThreeVector phantom_tlate(0., 0., WORLD_XYZ/2. - PHANTOM_D - PHANTOM_Z/2.);
+    auto solidphantom = new G4Tubs("Water Phantom", 0., PHANTOM_R, PHANTOM_Z/2., 0., twopi);
+    auto logicphantom = new G4LogicalVolume(solidphantom, FindMaterial(PHANTOM_MATERIAL), "Water Phantom");
+    new G4PVPlacement(nullptr, phantom_tlate, logicphantom, "Water Phantom", logicWorld, false, 0, checkOverlaps);
+    G4VisAttributes phantomVisAtt(G4Colour::Cyan());
+    phantomVisAtt.SetForceSolid();
+    logicphantom->SetVisAttributes(phantomVisAtt);
+
+    // Scoring planes in water phantom
+    auto solidSPRep = new G4Tubs("Scoring Plane Rep", 0., PHANTOM_R, PLANE_THICKNESS/2., 0., twopi);
+    auto logicSPRep = new G4LogicalVolume(solidSPRep, FindMaterial(PHANTOM_MATERIAL), "Scoring Plane Rep");
+    new G4PVReplica("Scoring Plane Rep", logicSPRep, logicphantom, kZAxis, N_PLANES, PLANE_THICKNESS);
+    G4VisAttributes SPRepVisAtt(G4Colour(1., 1., 1., .5));
+    logicSPRep->SetVisAttributes(SPRepVisAtt);
+    phantomScoringVolume = logicSPRep;
 
     // // Primary Collimator
     // G4double PC_RMin = 3.8*cm;
@@ -272,9 +264,25 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
 void DetectorConstruction::ConstructSDandField() {
     G4SDManager *sdManager = G4SDManager::GetSDMpointer();
-    SensitiveDetector *sd = new SensitiveDetector("Sensitive Detector");
+    
+    auto sd = new SensitiveDetector("Sensitive Detector");
     sdManager->AddNewDetector(sd);
     scoringVolume->SetSensitiveDetector(sd);
+
+    auto phantomSD = new PhantomSD("Phantom Sensitive Detector");
+    sdManager->AddNewDetector(phantomSD);
+    phantomScoringVolume->SetSensitiveDetector(phantomSD);
+}
+
+
+G4Material* DetectorConstruction::FindMaterial(const G4String &name) {
+    G4Material* material = G4NistManager::Instance()->FindOrBuildMaterial(name);
+    if (!material) {
+        G4ExceptionDescription exceptionDescription;
+        exceptionDescription << "Cannot find material " << name;
+        G4Exception("DetectorConstruction::FindMaterial()", "MyCode0001", FatalException, exceptionDescription);
+    }
+    return material;
 }
 
 
@@ -289,6 +297,7 @@ void DetectorConstruction::DefineMaterials(){
     Au = nist->FindOrBuildMaterial("G4_Au"); // gold (79)
     air = nist->FindOrBuildMaterial("G4_AIR");
     mylar = nist->FindOrBuildMaterial("G4_MYLAR");
+    water = nist->FindOrBuildMaterial("G4_WATER");
     kapton = nist->FindOrBuildMaterial("G4_KAPTON");
 
     // G4Element *elH = nist->FindOrBuildElement("H");

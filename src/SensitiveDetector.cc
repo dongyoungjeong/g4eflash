@@ -51,10 +51,10 @@ G4bool SensitiveDetector::ProcessHits(G4Step *step, G4TouchableHistory *){
     analysisManager->FillNtupleDColumn(0, 6, kineticEnergy / MeV);
     analysisManager->FillNtupleDColumn(0, 7, weight);
     analysisManager->FillNtupleIColumn(0, 8, pdg);
-    analysisManager->FillNtupleIColumn(0, 9, isNew);
-    analysisManager->FillNtupleIColumn(0, 10, eventID);
-    analysisManager->FillNtupleIColumn(0, 11, parentID);
-    analysisManager->FillNtupleIColumn(0, 12, trackID);
+    // analysisManager->FillNtupleIColumn(0, 9, isNew);
+    // analysisManager->FillNtupleIColumn(0, 10, eventID);
+    // analysisManager->FillNtupleIColumn(0, 11, parentID);
+    // analysisManager->FillNtupleIColumn(0, 12, trackID);
     analysisManager->AddNtupleRow(0);
 
     return true;
