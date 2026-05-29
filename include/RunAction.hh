@@ -16,8 +16,8 @@ public:
     void EndOfRunAction(const G4Run*) override;
 
 private:
-    void CreateHeadNtuple();          // ntuple 0  — head scoring plane
-    void CreatePhantomNtuples();      // ntuples 1..N_PLANES — phantom planes
+    void CreatePhaseSpaceNtuple();          // ntuple 0  — head scoring plane
+    void CreatePhantomPhaseSpaceNtuples();      // ntuples 1..N_PLANES — phantom planes
     static void AddPhaseSpaceColumns(G4AnalysisManager *analysisManager, G4int ntupleID);
 };
 #endif

@@ -1,7 +1,7 @@
 #include "DetectorConstruction.hh"
 #include "ActionInitialization.hh"
-#include "QGSP_BIC_HP.hh"
 
+#include "QGSP_BIC_HP.hh"
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
 #include "G4UIExecutive.hh"
@@ -21,25 +21,25 @@ int main(int argc, char** argv){
     runManager->Initialize(); // declared here instead of .mac files
     // runManager->BeamOn(1000000); // normally declared in run.mac
 
-    auto visManager = new G4VisExecutive(argc, argv);
-    visManager->Initialize();
-
-    // G4ScoringManager::GetScoringManager();
-
-    auto UImanager = G4UImanager::GetUIpointer();
-    if (argc == 1){ // interactive mode
-        G4UIExecutive *ui = new G4UIExecutive(argc, argv);
-        UImanager->ApplyCommand("/control/execute vis.mac");
-        ui->SessionStart();
-        delete ui;
+    G4String argv1 = argc>1? argv[1]: "";
+    if (argv1.size()>0 && std::all_of(argv1.begin(), argv1.end(), ::isdigit))
+        runManager->BeamOn(std::stoi(argv1));
+    else{ // use of visExecutive and UIpointer
+        auto visExecutive = new G4VisExecutive(argc, argv);
+        visExecutive->Initialize();
+        // G4ScoringManager::GetScoringManager();
+        auto UIpointer = G4UImanager::GetUIpointer();
+        if (argc == 1){ // interactive mode
+            auto uiExecutive = new G4UIExecutive(argc, argv);
+            UIpointer->ApplyCommand("/control/execute vis.mac");
+            uiExecutive->SessionStart();
+            delete uiExecutive;
+        }
+        else
+            UIpointer->ApplyCommand("/control/execute " + argv1);
+        delete visExecutive;
     }
-    else{ // batch mode
-        G4String command = "/control/execute ";
-        G4String fileName = argv[1];
-        UImanager->ApplyCommand(command + fileName);
-    }
-    
-    delete visManager;
     delete runManager;
     return 0;
 }
+

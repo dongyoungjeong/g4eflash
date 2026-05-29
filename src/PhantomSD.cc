@@ -1,61 +1,79 @@
 #include "PhantomSD.hh"
 #include "Parameters.hh"
 
-// #include "G4HCofThisEvent.hh"
 #include "G4AnalysisManager.hh"
 #include "G4SystemOfUnits.hh"
-#include "G4VSolid.hh"
-#include "G4RunManager.hh"
-// #include "G4HCofThisEvent.hh"
-// #include "G4SDManager.hh"
+#include "G4NistManager.hh"
 
-PhantomSD::PhantomSD(const G4String &name) : G4VSensitiveDetector(name) {}
+
+G4Mutex PhantomSD::fMutex = G4MUTEX_INITIALIZER;
+std::vector<G4double> PhantomSD::runEnergyDeposits(PHANTOM_N_VOXELS, 0.);
+
+
+PhantomSD::PhantomSD(const G4String &name) : G4VSensitiveDetector(name), eventEnergyDeposits(PHANTOM_N_VOXELS, 0.) {
+
+    G4double density = G4NistManager::Instance()->FindOrBuildMaterial(PHANTOM_MATERIAL)->GetDensity(); // g/mm^3
+    voxelMass = density*std::pow(SCORING_UNIT, 3); // g
+}
+
 
 PhantomSD::~PhantomSD() {}
 
+
+void PhantomSD::Initialize(G4HCofThisEvent *){
+    std::fill(eventEnergyDeposits.begin(), eventEnergyDeposits.end(), 0.); // Reset per-event buffer at start of each event
+}
+
+
 G4bool PhantomSD::ProcessHits(G4Step *step, G4TouchableHistory *){
-    // For phase space: record particles entering the volume
-    G4StepPoint *preStepPoint = step->GetPreStepPoint();
-    if (preStepPoint->GetStepStatus() != fGeomBoundary)
+    G4double totalEnergyDeposit = step->GetTotalEnergyDeposit();
+    if(totalEnergyDeposit == 0.)
         return false;
 
-    const G4VTouchable *touchable = preStepPoint->GetTouchable();
-    G4int planeIndex = touchable->GetCopyNumber(0);
-    // if (planeIndex < 0 || planeIndex >= N_PLANES){
-    //     G4cerr << "PhantomSD: copy number out of range: " << planeIndex << G4endl;
-    //     return false;
-    // }
-    G4int ntupleID = planeIndex + PHANTOM_NTUPLE_OFFSET; // ntupleID starts from the offset, for instance, 0 is for the scoring plane before the phantom
-
-    G4Track *track = step->GetTrack();
-    G4int pdg = track->GetDynamicParticle()->GetPDGcode();
-    G4ThreeVector position = preStepPoint->GetPosition();
-    G4ThreeVector momentumDirection = preStepPoint->GetMomentumDirection();
-    G4double kineticEnergy = preStepPoint->GetKineticEnergy();
-    G4double weight = track->GetWeight();
-    // G4int eventID = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-    // G4int parentID = track->GetParentID();
-    // G4int trackID = track->GetTrackID();
-    // G4int isNew = -1; //(trackID == 1) ? 1 : 0; // should be checked later for the correctness
-
-    // G4cout<< "position"<< position<<", direction"<< momentumDirection<<", kE("<< kineticEnergy<< ")" <<G4endl;
-    // track->SetTrackStatus(fStopAndKill); // kill the particle after recording its phase space data
-
-    G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
-    analysisManager->FillNtupleDColumn(ntupleID, 0, position.x() / mm);
-    analysisManager->FillNtupleDColumn(ntupleID, 1, position.y() / mm);
-    analysisManager->FillNtupleDColumn(ntupleID, 2, position.z() / mm);
-    analysisManager->FillNtupleDColumn(ntupleID, 3, momentumDirection.x());
-    analysisManager->FillNtupleDColumn(ntupleID, 4, momentumDirection.y());
-    analysisManager->FillNtupleDColumn(ntupleID, 5, momentumDirection.z());
-    analysisManager->FillNtupleDColumn(ntupleID, 6, kineticEnergy / MeV);
-    analysisManager->FillNtupleDColumn(ntupleID, 7, weight);
-    analysisManager->FillNtupleIColumn(ntupleID, 8, pdg);
-    // analysisManager->FillNtupleIColumn(ntupleID, 9, isNew);
-    // analysisManager->FillNtupleIColumn(ntupleID, 10, eventID);
-    // analysisManager->FillNtupleIColumn(ntupleID, 11, parentID);
-    // analysisManager->FillNtupleIColumn(ntupleID, 12, trackID);
-    analysisManager->AddNtupleRow(ntupleID);
-
+    const G4VTouchable *touchable = step->GetPreStepPoint()->GetTouchable();
+    G4int ix = touchable->GetCopyNumber(0);
+    G4int iy = touchable->GetCopyNumber(1);
+    G4int iz = touchable->GetCopyNumber(2);
+    if (ix < 0 || ix >= PHANTOM_N_XY || iy < 0 || iy >= PHANTOM_N_XY || iz < 0 || iz >= PHANTOM_N_Z){
+        G4ExceptionDescription msg;
+        msg << "Voxel index out of range: " << "ix=" << ix << " iy=" << iy << " iz=" << iz;
+        G4Exception("PhantomSD::ProcessHits", "PhantomSD001", JustWarning, msg);
+        return false;
+    }
+    
+    eventEnergyDeposits[ix + PHANTOM_N_XY * (iy + PHANTOM_N_XY * iz)] += totalEnergyDeposit;
     return true;
+}
+
+
+void PhantomSD::EndOfEvent(G4HCofThisEvent *){ // Merge per-event buffer into run total — mutex for MT safety
+    G4AutoLock lock(&fMutex);
+    for(G4int i=0; i<PHANTOM_N_VOXELS; ++i)
+        runEnergyDeposits[i] += eventEnergyDeposits[i];
+}
+
+
+void PhantomSD::Write3DDose(const G4String &filename) const{
+    G4double maxEnergyDeposit = *std::max_element(runEnergyDeposits.begin(), runEnergyDeposits.end());
+    if (maxEnergyDeposit == 0.)
+        return;
+
+    std::ofstream out(filename);
+    out << "x (mm),y (mm),Depth (mm),Relative Dose\n";
+    out << std::fixed << std::setprecision(4);
+
+    for (G4int iz = 0; iz < PHANTOM_N_Z; ++iz){
+        G4double depth = (PHANTOM_N_Z - 1 - iz + .5) * SCORING_UNIT;
+        for (G4int iy = 0; iy < PHANTOM_N_XY; ++iy){
+            G4double y = (-PHANTOM_N_XY / 2. + iy + .5) * SCORING_UNIT;
+            for (G4int ix = 0; ix < PHANTOM_N_XY; ++ix){
+                G4double x = (-PHANTOM_N_XY / 2. + ix + .5) * SCORING_UNIT;
+                G4double dose = runEnergyDeposits[ix + PHANTOM_N_XY * (iy + PHANTOM_N_XY * iz)] / maxEnergyDeposit;
+                if (dose > 1e-9) // skip near-zero voxels
+                    out << x << "," << y << "," << depth << "," << dose << "\n";
+            }
+        }
+    }
+    out.close();
+    G4cout << "PhantomSD: 3D dose written to " << filename << G4endl;
 }

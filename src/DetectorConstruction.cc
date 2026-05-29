@@ -1,6 +1,7 @@
 #include "DetectorConstruction.hh"
-#include "SensitiveDetector.hh"
+#include "PhaseSpaceSD.hh"
 #include "PhantomSD.hh"
+#include "PhantomPhaseSpaceSD.hh"
 #include "Parameters.hh"
 
 #include "G4NistManager.hh"
@@ -67,9 +68,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     logicSF2S->SetVisAttributes(SF2SVisAtt);
 
     // Light-field Mirror
-    G4ThreeVector mirror1_tlate(0., 0., WORLD_XYZ/2. - MIRROR_D - MIRROR1_Z/2.);
     auto mirrorRot = new G4RotationMatrix();
-    mirrorRot->rotateX(45.*deg);
+    mirrorRot->rotateX(MIRROR_ANGLE);
+    G4ThreeVector mirror1_tlate(0., 0., WORLD_XYZ/2. - MIRROR_D - MIRROR1_Z/2./cos(MIRROR_ANGLE));
     auto solidMirror1 = new G4Tubs("Light Field Mirror Mylar", 0., HEAD_R, MIRROR1_Z/2., 0., twopi);
     auto logicMirror1 = new G4LogicalVolume(solidMirror1, FindMaterial(MIRROR1_MATERIAL), "Light Field Mirror Mylar");
     new G4PVPlacement(mirrorRot, mirror1_tlate, logicMirror1, "Light Field Mirror Mylar", logicWorld, false, 0, checkOverlaps);
@@ -77,7 +78,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     mirror1VisAtt.SetForceSolid();
     logicMirror1->SetVisAttributes(mirror1VisAtt);
 
-    G4ThreeVector mirror2_tlate(0., 0., WORLD_XYZ/2. - MIRROR_D - MIRROR1_Z - MIRROR2_Z/2.);
+    G4ThreeVector mirror2_tlate(0., 0., WORLD_XYZ/2. - MIRROR_D - (MIRROR1_Z + MIRROR2_Z/2.)/cos(MIRROR_ANGLE));
     auto solidMirror2 = new G4Tubs("Light Field Mirror Aluminium", 0., HEAD_R, MIRROR2_Z/2., 0., twopi);
     auto logicMirror2 = new G4LogicalVolume(solidMirror2, FindMaterial(MIRROR2_MATERIAL), "Light Field Mirror Aluminium");
     new G4PVPlacement(mirrorRot, mirror2_tlate, logicMirror2, "Light Field Mirror Aluminium", logicWorld, false, 0, checkOverlaps);
@@ -85,32 +86,51 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     mirror2VisAtt.SetForceSolid();
     logicMirror2->SetVisAttributes(mirror2VisAtt);
 
-    // Scoring Plane
-    G4ThreeVector SP_tlate(0., 0., WORLD_XYZ/2. - SP_D - SP_Z/2.);
-    auto solidSP = new G4Tubs("Scoring Plane", 0., HEAD_R, SP_Z/2., 0., twopi);
-    auto logicSP = new G4LogicalVolume(solidSP, FindMaterial(SP_MATERIAL), "Scoring Plane");
-    new G4PVPlacement(nullptr, SP_tlate, logicSP, "Scoring Plane", logicWorld, false, 0, checkOverlaps);
+    // Phase Space scoring Plane
+    G4ThreeVector SP_tlate(0., 0., WORLD_XYZ/2. - PHSP_D - SCORING_UNIT/2.);
+    auto solidSP = new G4Tubs("Phase Space Scoring Plane", 0., PHSP_R, SCORING_UNIT / 2., 0., twopi);
+    auto logicSP = new G4LogicalVolume(solidSP, FindMaterial(SP_MATERIAL), "Phase Space Scoring Plane");
+    new G4PVPlacement(nullptr, SP_tlate, logicSP, "Phase Space Scoring Plane", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes SPVisAtt(G4Colour(1., 1., 1., .5));
     SPVisAtt.SetForceSolid();
     logicSP->SetVisAttributes(SPVisAtt);
     scoringVolume = logicSP; // set the scoring volume for later use in SensitiveDetector
 
-    // water phantom
+    // Phantoms
     G4ThreeVector phantom_tlate(0., 0., WORLD_XYZ/2. - PHANTOM_D - PHANTOM_Z/2.);
-    auto solidphantom = new G4Tubs("Water Phantom", 0., PHANTOM_R, PHANTOM_Z/2., 0., twopi);
-    auto logicphantom = new G4LogicalVolume(solidphantom, FindMaterial(PHANTOM_MATERIAL), "Water Phantom");
-    new G4PVPlacement(nullptr, phantom_tlate, logicphantom, "Water Phantom", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes phantomVisAtt(G4Colour::Cyan());
     phantomVisAtt.SetForceSolid();
-    logicphantom->SetVisAttributes(phantomVisAtt);
-
-    // Scoring planes in water phantom
-    auto solidSPRep = new G4Tubs("Scoring Plane Rep", 0., PHANTOM_R, PLANE_THICKNESS/2., 0., twopi);
-    auto logicSPRep = new G4LogicalVolume(solidSPRep, FindMaterial(PHANTOM_MATERIAL), "Scoring Plane Rep");
-    new G4PVReplica("Scoring Plane Rep", logicSPRep, logicphantom, kZAxis, N_PLANES, PLANE_THICKNESS);
-    G4VisAttributes SPRepVisAtt(G4Colour(1., 1., 1., .5));
-    logicSPRep->SetVisAttributes(SPRepVisAtt);
-    phantomScoringVolume = logicSPRep;
+    if(PHANTOM_DOSE){ // Box for dosimetry
+        auto solidPhantom = new G4Box("Box Phantom", PHANTOM_XY/2., PHANTOM_XY/2., PHANTOM_Z/2.);
+        auto logicPhantom = new G4LogicalVolume(solidPhantom, FindMaterial(PHANTOM_MATERIAL), "Box Phantom");
+        logicPhantom->SetVisAttributes(phantomVisAtt);
+        new G4PVPlacement(nullptr, phantom_tlate, logicPhantom, "Box Phantom", logicWorld, false, 0, checkOverlaps);
+        auto solidPhantomRepZ = new G4Box("Box Phantom Replica Z", PHANTOM_XY/2., PHANTOM_XY/2., SCORING_UNIT/2.);
+        auto logicPhantomRepZ = new G4LogicalVolume(solidPhantomRepZ, FindMaterial(PHANTOM_MATERIAL), "Box Phantom Replica Z");
+        logicPhantomRepZ->SetVisAttributes(G4VisAttributes::GetInvisible());
+        new G4PVReplica("Box Phantom Replica Z", logicPhantomRepZ, logicPhantom, kZAxis, PHANTOM_N_Z, SCORING_UNIT);
+        auto solidPhantomRepY = new G4Box("Box Phantom Replica Y", PHANTOM_XY/2., SCORING_UNIT/2., SCORING_UNIT/2.);
+        auto logicPhantomRepY = new G4LogicalVolume(solidPhantomRepY, FindMaterial(PHANTOM_MATERIAL), "Box Phantom Replica Y");
+        logicPhantomRepY->SetVisAttributes(G4VisAttributes::GetInvisible());
+        new G4PVReplica("Box Phantom Replica Y", logicPhantomRepY, logicPhantomRepZ, kYAxis, PHANTOM_N_XY, SCORING_UNIT);
+        auto solidPhantomRep = new G4Box("Box Phantom Voxels", SCORING_UNIT/2., SCORING_UNIT/2., SCORING_UNIT/2.);
+        auto logicPhantomRep = new G4LogicalVolume(solidPhantomRep, FindMaterial(PHANTOM_MATERIAL), "Box Phantom Voxels");
+        logicPhantomRep->SetVisAttributes(G4VisAttributes::GetInvisible());
+        new G4PVReplica("Box Phantom Voxels", logicPhantomRep, logicPhantomRepY, kXAxis, PHANTOM_N_XY, SCORING_UNIT);
+        phantomScoringVolume = logicPhantomRep;
+    }
+    else if(PHANTOM_PHASE_SPACE){ // Cylindrial for phase space scoring
+        auto solidPhantom = new G4Tubs("Cylindrical Phantom", 0., PHANTOM_R, PHANTOM_Z/2., 0., twopi);
+        auto logicPhantom = new G4LogicalVolume(solidPhantom, FindMaterial(PHANTOM_MATERIAL), "Cylindrical Phantom");
+        logicPhantom->SetVisAttributes(phantomVisAtt);
+        new G4PVPlacement(nullptr, phantom_tlate, logicPhantom, "Cylindrical Phantom", logicWorld, false, 0, checkOverlaps);
+        auto solidPhantomRep = new G4Tubs("Phantom Phase Space Scoring Planes", 0., PHANTOM_R, SCORING_UNIT/2., 0., twopi);
+        auto logicPhantomRep = new G4LogicalVolume(solidPhantomRep, FindMaterial(PHANTOM_MATERIAL), "Phantom Phase Space Scoring Planes");
+        logicPhantomRep->SetVisAttributes(G4VisAttributes::GetInvisible());
+        new G4PVReplica("Phantom Phase Space Scoring Planes", logicPhantomRep, logicPhantom, kZAxis, N_PLANES, SCORING_UNIT);
+        phantomScoringVolume = logicPhantomRep;
+    }
+    
 
     // // Primary Collimator
     // G4double PC_RMin = 3.8*cm;
@@ -263,15 +283,22 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
 
 void DetectorConstruction::ConstructSDandField() {
-    G4SDManager *sdManager = G4SDManager::GetSDMpointer();
+    G4SDManager *SDMpointer = G4SDManager::GetSDMpointer();
     
-    auto sd = new SensitiveDetector("Sensitive Detector");
-    sdManager->AddNewDetector(sd);
-    scoringVolume->SetSensitiveDetector(sd);
+    auto phaseSpaceSD = new PhaseSpaceSD("PhaseSpaceSD");
+    SDMpointer->AddNewDetector(phaseSpaceSD);
+    scoringVolume->SetSensitiveDetector(phaseSpaceSD);
 
-    auto phantomSD = new PhantomSD("Phantom Sensitive Detector");
-    sdManager->AddNewDetector(phantomSD);
-    phantomScoringVolume->SetSensitiveDetector(phantomSD);
+    if(PHANTOM_DOSE){
+        auto phantomSD = new PhantomSD("PhantomSD");
+        SDMpointer->AddNewDetector(phantomSD);
+        phantomScoringVolume->SetSensitiveDetector(phantomSD);
+    }
+    else if(PHANTOM_PHASE_SPACE){
+        auto phantomPhaseSpaceSD = new PhantomPhaseSpaceSD("Phantom Phase Space Sensitive Detector");
+        SDMpointer->AddNewDetector(phantomPhaseSpaceSD);
+        phantomScoringVolume->SetSensitiveDetector(phantomPhaseSpaceSD);
+    }
 }
 
 

@@ -2,9 +2,11 @@
 #include "DetectorConstruction.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "Parameters.hh"
+#include "PhantomSD.hh"
 
 #include "G4Run.hh"
 #include "G4RunManager.hh"
+#include "G4SDManager.hh"
 
 
 RunAction::RunAction() : G4UserRunAction() {}
@@ -18,15 +20,15 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
     analysisManager->SetDefaultFileType("root");
     analysisManager->SetNtupleMerging(true); // required for multithreading
 
-    G4String fileName = "run" + std::to_string(run->GetRunID());
+    G4String fileName = "phsp_run" + std::to_string(run->GetRunID());
     analysisManager->OpenFile(fileName);
 
-    CreateHeadNtuple();
-    CreatePhantomNtuples();
+    CreatePhaseSpaceNtuple();
+    // CreatePhantomPhaseSpaceNtuples();
 }
 
 
-void RunAction::CreateHeadNtuple(){ // ntuple 0 — head scoring plane (filled by SensitiveDetector)
+void RunAction::CreatePhaseSpaceNtuple(){ // ntuple 0 — head scoring plane (filled by SensitiveDetector)
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
     G4int ntupleID = analysisManager->CreateNtuple("phsp_head", "phase space at head");
     if (ntupleID != 0) // id must be 0; assert just in case
@@ -35,7 +37,7 @@ void RunAction::CreateHeadNtuple(){ // ntuple 0 — head scoring plane (filled b
 }
 
 
-void RunAction::CreatePhantomNtuples(){ // ntuples 1..N_PLANES — phantom planes
+void RunAction::CreatePhantomPhaseSpaceNtuples(){ // ntuples 1..N_PLANES — phantom planes
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
     for (G4int i=0; i<N_PLANES; ++i){
         std::ostringstream oss;
@@ -66,11 +68,19 @@ void RunAction::AddPhaseSpaceColumns(G4AnalysisManager *analysisManager, G4int n
 }
 
 void RunAction::EndOfRunAction(const G4Run* run) {
-    G4int nofEvents = run->GetNumberOfEvent();
-    if(nofEvents == 0)
+    if(run->GetNumberOfEvent() == 0)
         return;
 
+    // Phase Space files
     G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
     analysisManager->Write();
     analysisManager->CloseFile();
+
+    // Phantom dose file
+    if(G4Threading::IsWorkerThread())
+        return;
+    G4SDManager *SDMpointer = G4SDManager::GetSDMpointer();
+    auto phantomSD = static_cast<PhantomSD*>(SDMpointer->FindSensitiveDetector("PhantomSD"));
+    if(phantomSD)
+        phantomSD->Write3DDose("dose3d.csv");
 }
