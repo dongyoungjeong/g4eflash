@@ -17,6 +17,5 @@ public:
     void EndOfEventAction(const G4Event* event) override;
 
 private:
-    G4int printModulo;
 };
 #endif

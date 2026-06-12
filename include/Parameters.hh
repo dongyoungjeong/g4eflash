@@ -4,6 +4,14 @@
 #include "globals.hh"
 #include "G4SystemOfUnits.hh"
 
+// Run parameters
+static const G4int PRINT_EVENT_MODULUS = 1000000;
+static const G4bool PHSP_SOURCE = true;
+static const G4String PHSP_FILENAME = "phsp_100M.root";
+static const G4String PHSP_TREENAME = "phsp_head";
+static const G4bool PHSP_SCORING = false;
+static const G4bool PHANTOM = true;
+
 // Overall geometry
 static const G4double WORLD_XYZ = m;
 static const G4double HEAD_R = 12.7 * mm; // radius of the head components
@@ -31,27 +39,21 @@ static const G4double MIRROR2_Z = 12. * um;
 // Distances of head components from the source
 static const G4double VEW_D = um;
 static const G4double SF1_D = cm;
-static const G4double SF2_D = 4.*cm;
-static const G4double MIRROR_D = 20. * cm;
-static const G4double PHSP_D = 49.9 * cm;
+static const G4double SF2_D = 5.*cm;
+static const G4double MIRROR_D = 9. * cm;
+static const G4double PHSP_D = 10. * cm;
 static const G4double PHANTOM_D = 50. * cm;
 
 // Phase space scoring plane parameters
 static const G4double PHSP_R = 5. * cm;
+static const G4double PHSP_Z = cm;
 
-// Phantom geometry and parameters (common)
-static const G4bool PHANTOM_DOSE = true; 
-static const G4bool PHANTOM_PHASE_SPACE = false; // effective only if PHANTOM_DOSE is false
+// Phantom parameters
 static const G4double SCORING_UNIT = mm;
-static const G4double PHANTOM_Z = 5. * cm;
-// Phantom for dosimetry
 static const G4double PHANTOM_XY = 10. * cm;
+static const G4double PHANTOM_Z = 5. * cm;
 static const G4int PHANTOM_N_XY = lround(PHANTOM_XY/SCORING_UNIT);
 static const G4int PHANTOM_N_Z = lround(PHANTOM_Z/SCORING_UNIT);
 static const G4int PHANTOM_N_VOXELS = PHANTOM_N_XY * PHANTOM_N_XY * PHANTOM_N_Z;
-// Phantom for Phase Space scoring
-static const G4double PHANTOM_R = 5. * cm;
-static const G4int PHANTOM_NTUPLE_OFFSET = 1; // ntuple 0 is reserved for head SD
-static const G4int N_PLANES = lround(PHANTOM_Z/SCORING_UNIT); // number of planes in the phantom, should be consistent with the actual geometry
 
 #endif

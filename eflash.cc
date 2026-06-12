@@ -1,5 +1,6 @@
 #include "DetectorConstruction.hh"
-#include "ActionInitialization.hh"
+#include "ActionInitialisation.hh"
+#include "Parameters.hh"
 
 #include "QGSP_BIC_HP.hh"
 #include "G4RunManagerFactory.hh"
@@ -13,11 +14,15 @@ int main(int argc, char** argv){
     G4int nThreads = lround(ceil(G4float(G4Threading::G4GetNumberOfCores())/2.));
     G4Random::setTheSeed(1); // 1 ≤ seed ≤ 900,000,000
 
-    auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
+    G4RunManager* runManager;
+    if(PHSP_SOURCE)
+        runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
+    else
+        runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
     runManager->SetNumberOfThreads(nThreads);
     runManager->SetUserInitialization(new DetectorConstruction());
     runManager->SetUserInitialization(new QGSP_BIC_HP());
-    runManager->SetUserInitialization(new ActionInitialization());
+    runManager->SetUserInitialization(new ActionInitialisation());
     runManager->Initialize(); // declared here instead of .mac files
     // runManager->BeamOn(1000000); // normally declared in run.mac
 

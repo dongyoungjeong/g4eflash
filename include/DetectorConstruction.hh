@@ -16,11 +16,9 @@ public:
     G4VPhysicalVolume* Construct() override;
     void ConstructSDandField() override;
     G4LogicalVolume* GetScoringVolume() const { return scoringVolume; }
-    G4LogicalVolume* GetPhantomScoringVolume() const { return phantomScoringVolume; }
 
 protected:
     G4LogicalVolume* scoringVolume;
-    G4LogicalVolume *phantomScoringVolume;
 
 private:
     G4Material *FindMaterial(const G4String &name);

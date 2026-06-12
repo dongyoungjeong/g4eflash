@@ -16,39 +16,27 @@ RunAction::~RunAction() {}
 
 
 void RunAction::BeginOfRunAction(const G4Run* run) {
-    G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
-    analysisManager->SetDefaultFileType("root");
-    analysisManager->SetNtupleMerging(true); // required for multithreading
+    if(PHSP_SCORING){
+        G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
+        analysisManager->SetDefaultFileType("root");
+        analysisManager->SetNtupleMerging(true); // required for multithreading
 
-    G4String fileName = "phsp_run" + std::to_string(run->GetRunID());
-    analysisManager->OpenFile(fileName);
+        G4String fileName = "phsp_run" + std::to_string(run->GetRunID());
+        analysisManager->OpenFile(fileName);
 
-    CreatePhaseSpaceNtuple();
-    // CreatePhantomPhaseSpaceNtuples();
+        CreatePhaseSpaceNtuple();
+    }
 }
 
 
 void RunAction::CreatePhaseSpaceNtuple(){ // ntuple 0 — head scoring plane (filled by SensitiveDetector)
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
-    G4int ntupleID = analysisManager->CreateNtuple("phsp_head", "phase space at head");
+    G4int ntupleID = analysisManager->CreateNtuple(PHSP_TREENAME, "phase space at head");
     if (ntupleID != 0) // id must be 0; assert just in case
         G4cerr << "RunAction: unexpected ntuple ID for head plane: " << ntupleID << G4endl;
     AddPhaseSpaceColumns(analysisManager, ntupleID);
 }
 
-
-void RunAction::CreatePhantomPhaseSpaceNtuples(){ // ntuples 1..N_PLANES — phantom planes
-    G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
-    for (G4int i=0; i<N_PLANES; ++i){
-        std::ostringstream oss;
-        oss << "phsp_plane_" << std::setw(3) << std::setfill('0') << i;
-        G4int ntupleID = analysisManager->CreateNtuple(oss.str(), "phase space at phantom plane " + std::to_string(i));
-        G4int expectedID = i + PHANTOM_NTUPLE_OFFSET; // ntupleID starts from the offset, for instance, 0 is for the scoring plane before the phantom
-        if(ntupleID != expectedID)
-            G4cerr << "RunAction: ntuple ID mismatch for plane " << i << " — expected " << expectedID << ", got " << ntupleID << G4endl;
-        AddPhaseSpaceColumns(analysisManager, ntupleID);
-    }
-}
 
 void RunAction::AddPhaseSpaceColumns(G4AnalysisManager *analysisManager, G4int ntupleID){
     analysisManager->CreateNtupleDColumn(ntupleID, "x");        // col 0 — position X (mm)
@@ -71,16 +59,16 @@ void RunAction::EndOfRunAction(const G4Run* run) {
     if(run->GetNumberOfEvent() == 0)
         return;
 
-    // Phase Space files
+    if(PHSP_SCORING){ // Phase Space files
     G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
     analysisManager->Write();
     analysisManager->CloseFile();
-
-    // Phantom dose file
-    if(G4Threading::IsWorkerThread())
-        return;
-    G4SDManager *SDMpointer = G4SDManager::GetSDMpointer();
-    auto phantomSD = static_cast<PhantomSD*>(SDMpointer->FindSensitiveDetector("PhantomSD"));
-    if(phantomSD)
+    }
+    else if(PHANTOM){// Phantom dose file
+        if(G4Threading::IsWorkerThread())
+            return;
+        G4SDManager *SDMpointer = G4SDManager::GetSDMpointer();
+        auto phantomSD = static_cast<PhantomSD*>(SDMpointer->FindSensitiveDetector("PhantomSD"));
         phantomSD->Write3DDose("dose3d.csv");
+    }
 }

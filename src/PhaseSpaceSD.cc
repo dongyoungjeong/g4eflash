@@ -1,4 +1,5 @@
 #include "PhaseSpaceSD.hh"
+#include "Parameters.hh"
 
 // #include "G4HCofThisEvent.hh"
 #include "G4AnalysisManager.hh"
@@ -38,9 +39,6 @@ G4bool PhaseSpaceSD::ProcessHits(G4Step *step, G4TouchableHistory *){
     G4int trackID = track->GetTrackID();
     G4int isNew = -1; //(trackID == 1) ? 1 : 0; // should be checked later for the correctness
 
-    // G4cout<< "position"<< position<<", direction"<< momentumDirection<<", kE("<< kineticEnergy<< ")" <<G4endl;
-    // track->SetTrackStatus(fStopAndKill); // kill the particle after recording its phase space data
-
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
     analysisManager->FillNtupleDColumn(0, 0, position.x() / mm);
     analysisManager->FillNtupleDColumn(0, 1, position.y() / mm);
@@ -57,5 +55,6 @@ G4bool PhaseSpaceSD::ProcessHits(G4Step *step, G4TouchableHistory *){
     // analysisManager->FillNtupleIColumn(0, 12, trackID);
     analysisManager->AddNtupleRow(0);
 
+    track->SetTrackStatus(fStopAndKill); // kill the particle after recording its phase space data
     return true;
 }

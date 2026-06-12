@@ -1,7 +1,6 @@
 #include "DetectorConstruction.hh"
 #include "PhaseSpaceSD.hh"
 #include "PhantomSD.hh"
-#include "PhantomPhaseSpaceSD.hh"
 #include "Parameters.hh"
 
 #include "G4NistManager.hh"
@@ -86,23 +85,22 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     mirror2VisAtt.SetForceSolid();
     logicMirror2->SetVisAttributes(mirror2VisAtt);
 
-    // Phase Space scoring Plane
-    G4ThreeVector SP_tlate(0., 0., WORLD_XYZ/2. - PHSP_D - SCORING_UNIT/2.);
-    auto solidSP = new G4Tubs("Phase Space Scoring Plane", 0., PHSP_R, SCORING_UNIT / 2., 0., twopi);
-    auto logicSP = new G4LogicalVolume(solidSP, FindMaterial(SP_MATERIAL), "Phase Space Scoring Plane");
-    new G4PVPlacement(nullptr, SP_tlate, logicSP, "Phase Space Scoring Plane", logicWorld, false, 0, checkOverlaps);
-    G4VisAttributes SPVisAtt(G4Colour(1., 1., 1., .5));
-    SPVisAtt.SetForceSolid();
-    logicSP->SetVisAttributes(SPVisAtt);
-    scoringVolume = logicSP; // set the scoring volume for later use in SensitiveDetector
-
-    // Phantoms
-    G4ThreeVector phantom_tlate(0., 0., WORLD_XYZ/2. - PHANTOM_D - PHANTOM_Z/2.);
-    G4VisAttributes phantomVisAtt(G4Colour::Cyan());
-    phantomVisAtt.SetForceSolid();
-    if(PHANTOM_DOSE){ // Box for dosimetry
+    if(PHSP_SCORING){ // Phase Space scoring Plane
+        G4ThreeVector SP_tlate(0., 0., WORLD_XYZ/2. - PHSP_D - PHSP_Z/2.);
+        auto solidSP = new G4Tubs("Phase Space Scoring Plane", 0., PHSP_R, PHSP_Z/2., 0., twopi);
+        auto logicSP = new G4LogicalVolume(solidSP, FindMaterial(SP_MATERIAL), "Phase Space Scoring Plane");
+        new G4PVPlacement(nullptr, SP_tlate, logicSP, "Phase Space Scoring Plane", logicWorld, false, 0, checkOverlaps);
+        G4VisAttributes SPVisAtt(G4Colour(1., 1., 1., .5));
+        SPVisAtt.SetForceSolid();
+        logicSP->SetVisAttributes(SPVisAtt);
+        scoringVolume = logicSP; // set the scoring volume for later use in SensitiveDetector
+    }
+    else if(PHANTOM){ // Phantoms
+        G4ThreeVector phantom_tlate(0., 0., WORLD_XYZ/2. - PHANTOM_D - PHANTOM_Z/2.);
         auto solidPhantom = new G4Box("Box Phantom", PHANTOM_XY/2., PHANTOM_XY/2., PHANTOM_Z/2.);
         auto logicPhantom = new G4LogicalVolume(solidPhantom, FindMaterial(PHANTOM_MATERIAL), "Box Phantom");
+        G4VisAttributes phantomVisAtt(G4Colour::Cyan());
+        phantomVisAtt.SetForceSolid();
         logicPhantom->SetVisAttributes(phantomVisAtt);
         new G4PVPlacement(nullptr, phantom_tlate, logicPhantom, "Box Phantom", logicWorld, false, 0, checkOverlaps);
         auto solidPhantomRepZ = new G4Box("Box Phantom Replica Z", PHANTOM_XY/2., PHANTOM_XY/2., SCORING_UNIT/2.);
@@ -117,18 +115,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         auto logicPhantomRep = new G4LogicalVolume(solidPhantomRep, FindMaterial(PHANTOM_MATERIAL), "Box Phantom Voxels");
         logicPhantomRep->SetVisAttributes(G4VisAttributes::GetInvisible());
         new G4PVReplica("Box Phantom Voxels", logicPhantomRep, logicPhantomRepY, kXAxis, PHANTOM_N_XY, SCORING_UNIT);
-        phantomScoringVolume = logicPhantomRep;
-    }
-    else if(PHANTOM_PHASE_SPACE){ // Cylindrial for phase space scoring
-        auto solidPhantom = new G4Tubs("Cylindrical Phantom", 0., PHANTOM_R, PHANTOM_Z/2., 0., twopi);
-        auto logicPhantom = new G4LogicalVolume(solidPhantom, FindMaterial(PHANTOM_MATERIAL), "Cylindrical Phantom");
-        logicPhantom->SetVisAttributes(phantomVisAtt);
-        new G4PVPlacement(nullptr, phantom_tlate, logicPhantom, "Cylindrical Phantom", logicWorld, false, 0, checkOverlaps);
-        auto solidPhantomRep = new G4Tubs("Phantom Phase Space Scoring Planes", 0., PHANTOM_R, SCORING_UNIT/2., 0., twopi);
-        auto logicPhantomRep = new G4LogicalVolume(solidPhantomRep, FindMaterial(PHANTOM_MATERIAL), "Phantom Phase Space Scoring Planes");
-        logicPhantomRep->SetVisAttributes(G4VisAttributes::GetInvisible());
-        new G4PVReplica("Phantom Phase Space Scoring Planes", logicPhantomRep, logicPhantom, kZAxis, N_PLANES, SCORING_UNIT);
-        phantomScoringVolume = logicPhantomRep;
+        scoringVolume = logicPhantomRep;
     }
     
 
@@ -285,19 +272,15 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 void DetectorConstruction::ConstructSDandField() {
     G4SDManager *SDMpointer = G4SDManager::GetSDMpointer();
     
+    if(PHSP_SCORING){
     auto phaseSpaceSD = new PhaseSpaceSD("PhaseSpaceSD");
     SDMpointer->AddNewDetector(phaseSpaceSD);
     scoringVolume->SetSensitiveDetector(phaseSpaceSD);
-
-    if(PHANTOM_DOSE){
+    }
+    else if(PHANTOM){
         auto phantomSD = new PhantomSD("PhantomSD");
         SDMpointer->AddNewDetector(phantomSD);
-        phantomScoringVolume->SetSensitiveDetector(phantomSD);
-    }
-    else if(PHANTOM_PHASE_SPACE){
-        auto phantomPhaseSpaceSD = new PhantomPhaseSpaceSD("Phantom Phase Space Sensitive Detector");
-        SDMpointer->AddNewDetector(phantomPhaseSpaceSD);
-        phantomScoringVolume->SetSensitiveDetector(phantomPhaseSpaceSD);
+        scoringVolume->SetSensitiveDetector(phantomSD);
     }
 }
 
