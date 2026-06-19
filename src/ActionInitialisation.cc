@@ -18,7 +18,7 @@ void ActionInitialisation::BuildForMaster() const {
 }
 
 
-void ActionInitialisation::Build() const {
+void ActionInitialisation::Build() const { // This is called once per thread, so we can set up the actions for each thread here
     if(PHSP_SOURCE)
         SetUserAction(new PhaseSpaceGeneratorAction(PHSP_FILENAME, PHSP_TREENAME));
     else

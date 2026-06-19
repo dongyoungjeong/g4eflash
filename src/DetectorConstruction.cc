@@ -59,7 +59,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     logicSF2L->SetVisAttributes(SF2LVisAtt);
 
     G4ThreeVector SF2S_tlate(0., 0., WORLD_XYZ/2. - SF2_D - SF2L_Z - SF2S_Z/2.);
-    auto solidSF2S = new G4Tubs("Secondary Scattering Foil Small", 0., HEAD_R/2., SF2S_Z/2., 0., twopi);
+    auto solidSF2S = new G4Tubs("Secondary Scattering Foil Small", 0., SF2S_R, SF2S_Z / 2., 0., twopi);
     auto logicSF2S = new G4LogicalVolume(solidSF2S, FindMaterial(SF2S_MATERIAL), "Secondary Scattering Foil Small");
     new G4PVPlacement(nullptr, SF2S_tlate, logicSF2S, "Secondary Scattering Foil Small", logicWorld, false, 0, checkOverlaps);
     G4VisAttributes SF2SVisAtt(G4Colour::Blue());

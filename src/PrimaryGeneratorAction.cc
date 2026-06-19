@@ -35,19 +35,19 @@ void PrimaryGeneratorAction::SetDefaultPrimaryParticle(){
     posDist->SetCentreCoords(G4ThreeVector(0., 0., WORLD_XYZ/2.));
     posDist->SetPosRot1(G4ThreeVector(1., 0., 0.)); // default value, but set it anyway
     posDist->SetPosRot2(G4ThreeVector(0., 1., 0.)); // default value, but set it anyway
-    posDist->SetBeamSigmaInX(mm);
-    posDist->SetBeamSigmaInY(mm);
-    posDist->SetRadius(mm);                         // Hard cutoff radius
+    posDist->SetBeamSigmaInX(BEAM_SIGMA_X);
+    posDist->SetBeamSigmaInY(BEAM_SIGMA_Y);
+    posDist->SetRadius(BEAM_SOURCE_RADIUS);                         // Hard cutoff radius
 
     angDist->SetAngDistType("beam2d");
     angDist->DefineAngRefAxes("angref1", G4ThreeVector(1., 0., 0.)); // default value, but set it anyway
     angDist->DefineAngRefAxes("angref2", G4ThreeVector(0., 1., 0.)); // default value, but set it anyway
-    angDist->SetBeamSigmaInAngX(deg);                                // set planar divergence
-    angDist->SetBeamSigmaInAngY(deg);                                // set planar divergence
+    angDist->SetBeamSigmaInAngX(BEAM_SIGMA_ANG_X);                                // set planar divergence
+    angDist->SetBeamSigmaInAngY(BEAM_SIGMA_ANG_Y);                                // set planar divergence
 
     eneDist->SetEnergyDisType("Gauss");
-    eneDist->SetMonoEnergy(6. * MeV);
-    eneDist->SetBeamSigmaInE(.2 * MeV);
+    eneDist->SetMonoEnergy(BEAM_ENERGY);
+    eneDist->SetBeamSigmaInE(BEAM_SIGMA_E);
 }
 
 
