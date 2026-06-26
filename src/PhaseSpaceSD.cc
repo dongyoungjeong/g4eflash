@@ -17,27 +17,25 @@ PhaseSpaceSD::~PhaseSpaceSD(){}
 
 
 G4bool PhaseSpaceSD::ProcessHits(G4Step *step, G4TouchableHistory *){
-    // For phase space: record particles entering the volume
     G4StepPoint *preStepPoint = step->GetPreStepPoint();
-    if (preStepPoint->GetStepStatus() != fGeomBoundary)
+    if (preStepPoint->GetStepStatus() != fGeomBoundary) // For phase space: record particles entering the volume
         return false;
-    // --- Only record forward-going particles (travelling toward -z) ---
-    if (preStepPoint->GetMomentumDirection().z() >= 0.)
+    if (preStepPoint->GetMomentumDirection().z() >= 0.) // Only record forward-going particles (travelling toward -z)
         return false;
-
-    G4Track *track = step->GetTrack();
-    G4int pdg = track->GetDynamicParticle()->GetPDGcode();
     
     G4ThreeVector position = preStepPoint->GetPosition();
     G4ThreeVector momentumDirection = preStepPoint->GetMomentumDirection();
     // G4ThreeVector momentum = preStepPoint->GetMomentum();
     G4double kineticEnergy = preStepPoint->GetKineticEnergy();
 
-    G4double weight = track->GetWeight();
     G4int eventID = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+
+    G4Track *track = step->GetTrack();
+    G4int pdg = track->GetDynamicParticle()->GetPDGcode();
+    G4double weight = track->GetWeight();
     G4int parentID = track->GetParentID();
     G4int trackID = track->GetTrackID();
-    G4int isNew = -1; //(trackID == 1) ? 1 : 0; // should be checked later for the correctness
+    G4int isNew = trackID==1? 1 : 0;
 
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
     analysisManager->FillNtupleDColumn(0, 0, position.x() / mm);
@@ -49,7 +47,7 @@ G4bool PhaseSpaceSD::ProcessHits(G4Step *step, G4TouchableHistory *){
     analysisManager->FillNtupleDColumn(0, 6, kineticEnergy / MeV);
     analysisManager->FillNtupleDColumn(0, 7, weight);
     analysisManager->FillNtupleIColumn(0, 8, pdg);
-    // analysisManager->FillNtupleIColumn(0, 9, isNew);
+    analysisManager->FillNtupleIColumn(0, 9, isNew);
     // analysisManager->FillNtupleIColumn(0, 10, eventID);
     // analysisManager->FillNtupleIColumn(0, 11, parentID);
     // analysisManager->FillNtupleIColumn(0, 12, trackID);

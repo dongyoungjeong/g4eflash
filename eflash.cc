@@ -1,5 +1,6 @@
 #include "DetectorConstruction.hh"
 #include "ActionInitialisation.hh"
+#include "Parameters.hh"
 
 #include "QGSP_BIC_HP.hh"
 #include "G4RunManagerFactory.hh"
@@ -14,11 +15,10 @@
 // ROOT::EnableThreadSafety();
 
 int main(int argc, char** argv){
-    G4int nThreads = lround(ceil(G4float(G4Threading::G4GetNumberOfCores())/2.));
-    G4Random::setTheSeed(1); // 1 ≤ seed ≤ 900,000,000
-
+    G4Random::setTheSeed(SEED);
+    
     G4RunManager* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
-    runManager->SetNumberOfThreads(nThreads);
+    runManager->SetNumberOfThreads(N_THREADS);
     runManager->SetUserInitialization(new DetectorConstruction());
     runManager->SetUserInitialization(new QGSP_BIC_HP());
     runManager->SetUserInitialization(new ActionInitialisation());

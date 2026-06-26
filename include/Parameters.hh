@@ -3,14 +3,17 @@
 
 #include "globals.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4Threading.hh"
 
 // Run parameters
+static const G4int SEED = 1; // 1 ≤ seed ≤ 900,000,000
+static const G4int N_THREADS = lround(ceil(G4float(G4Threading::G4GetNumberOfCores())/2.));
 static const G4int PRINT_EVENT_MODULUS = 1000000;
-static const G4bool PHSP_SOURCE = false;
-static const G4String PHSP_FILENAME = "phsp_100M.root";
+static const G4bool PHSP_SOURCE = true;
+static const G4String PHSP_FILENAME = "phsp_1G.root";
 static const G4String PHSP_TREENAME = "phsp_head";
-static const G4bool PHSP_SCORING = true;
-static const G4bool PHANTOM = false;
+static const G4bool PHSP_SCORING = false;
+static const G4bool PHANTOM = true;
 
 // Beam Source Parameters (primary generator)
 static const G4double BEAM_ENERGY = 9.9 * MeV;

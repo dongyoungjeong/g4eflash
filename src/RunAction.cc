@@ -48,7 +48,7 @@ void RunAction::AddPhaseSpaceColumns(G4AnalysisManager *analysisManager, G4int n
     analysisManager->CreateNtupleDColumn(ntupleID, "kE");       // col 6 — kinetic energy (MeV)
     analysisManager->CreateNtupleDColumn(ntupleID, "weight");   // col 7 — particle weight
     analysisManager->CreateNtupleIColumn(ntupleID, "pdg");      // col 8 — PDG code
-    // analysisManager->CreateNtupleIColumn(ntupleID, "isNew");    // col 9 — new track flag
+    analysisManager->CreateNtupleIColumn(ntupleID, "isNew");    // col 9 — new track flag
     // analysisManager->CreateNtupleIColumn(ntupleID, "eventID");  // col 10
     // analysisManager->CreateNtupleIColumn(ntupleID, "parentID"); // col 11
     // analysisManager->CreateNtupleIColumn(ntupleID, "trackID");  // col 12
